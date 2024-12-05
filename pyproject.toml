@@ -41,6 +41,7 @@ dependencies = [
     "numpy",
     "scipy",
     "pillow",
+    "pywavelets",
     "scikit-image",
     "tomobar"
 ]
