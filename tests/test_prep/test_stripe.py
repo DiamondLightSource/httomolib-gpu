@@ -7,12 +7,32 @@ import pytest
 from httomolibgpu.prep.normalize import normalize
 from httomolibgpu.prep.stripe import (
     remove_stripe_based_sorting,
+    remove_stripe_fw,
     remove_stripe_ti,
     remove_all_stripe,
     raven_filter,
 )
 from numpy.testing import assert_allclose
 from .stripe_cpu_reference import raven_filter_numpy
+
+
+
+def test_remove_stripe_fw_on_data(data, flats, darks):
+    # --- testing the CuPy implementation from TomoCupy ---#
+    data = normalize(data, flats, darks, cutoff=10, minus_log=True)
+
+    data_after_stripe_removal = remove_stripe_fw(cp.copy(data), level=7, wname='sym16', sigma=1).get()
+
+    assert_allclose(np.mean(data_after_stripe_removal), 0.27923557, rtol=1e-05)
+    assert_allclose(np.median(data_after_stripe_removal), 0.07920341, rtol=1e-05)
+    assert_allclose(np.max(data_after_stripe_removal), 2.4423466, rtol=1e-05)
+    assert_allclose(np.mean(data_after_stripe_removal, axis=(1, 2)).sum(), 50.2624, rtol=1e-05)
+    assert data_after_stripe_removal.flags.c_contiguous
+
+    data = None  #: free up GPU memory
+    # make sure the output is float32
+    assert data_after_stripe_removal.dtype == np.float32
+
 
 def test_remove_stripe_ti_on_data(data, flats, darks):
     # --- testing the CuPy implementation from TomoCupy ---#
